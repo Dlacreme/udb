@@ -1,6 +1,4 @@
 defmodule UDB.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
@@ -8,12 +6,9 @@ defmodule UDB.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: UDB.Worker.start_link(arg)
-      # {UDB.Worker, arg}
+      {Task.Supervisor, name: UDB.Server.SocketSupervisor, strategy: :one_for_one},
+      {UDB.Server, name: UDB.Server, strategy: :one_for_one},
     ]
-
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: UDB.Supervisor]
     Supervisor.start_link(children, opts)
   end

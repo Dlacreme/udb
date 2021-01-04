@@ -5,6 +5,7 @@ UDB (Unified Database) acts as a gateway between your database and your applicat
 ## Configuration
 
 UDB is expecting the Database settings with the following env variable:
+ - PORT: port the socket will be accepting connections
  - DB_HOST: Database hostname
  - DB_NAME: Database name
  - DB_USER: POSTGRESQL user name

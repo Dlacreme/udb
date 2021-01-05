@@ -6,7 +6,7 @@ defmodule UDB.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Task.Supervisor, name: UDB.Server.SocketSupervisor, strategy: :one_for_one},
+      {Task.Supervisor, name: UDB.Server.SocketSupervisor},
       {UDB.Server, name: UDB.Server, strategy: :one_for_one},
     ]
     opts = [strategy: :one_for_one, name: UDB.Supervisor]

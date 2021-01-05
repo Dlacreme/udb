@@ -27,48 +27,50 @@ defmodule UDB.Server do
   end
 
   defp serve(socket) do
-    IO.puts("New client connected")
+    Logger.info("New client connected")
     msg =
-      with  {:ok, data} <- read_line(socket),
-            {:ok, command} <- parse_line(data),
-            do: run(command)
-    write_line(socket, msg)
+      with  {:ok, json} <- read_line(socket),
+            {:ok, command} <- UDB.Command.parse(json),
+            do: UDB.Command.run(command)
+    write(socket, msg)
     serve(socket)
   end
 
   defp read_line(socket) do
-    :gen_tcp.recv(socket, 0)
+    {:ok, data} = :gen_tcp.recv(socket, 0)
+    case Jason.decode(data) do
+      {:ok, json} ->
+        {:ok, json}
+      {:error, _} ->
+        {:error, :invalid_format}
+    end
   end
 
-  defp parse_line(data) do
-    {:ok, data}
+  defp write(socket, {:ok, data}) do
+    :gen_tcp.send(socket, encode(data))
   end
 
-  defp run(command) do
-    IO.puts(inspect command)
-    :ok
+  defp write(socket, {:error, :invalid_format}) do
+    :gen_tcp.send(socket, "INVALID QUERY\r\n")
   end
 
-  defp write_line(socket, {:ok, text}) do
-    :gen_tcp.send(socket, text)
-  end
-
-  defp write_line(socket, {:error, :unknown_command}) do
-    # known error. handle the scenario
+  defp write(socket, {:error, :unknown_command}) do
     :gen_tcp.send(socket, "UNKNOWN COMMAND\r\n")
   end
 
-  defp write_line(_socket, {:error, :close}) do
+  defp write(_socket, {:error, :close}) do
     exit(:shutdown)
   end
 
-  defp write_line(socket, {:error, :not_found}) do
+  defp write(socket, {:error, :not_found}) do
     :gen_tcp.send(socket, "NOT FOUND\r\n")
   end
 
-  defp write_line(socket, {:error, error}) do
+  defp write(socket, {:error, error}) do
     :gen_tcp.send(socket, "ERROR\r\n")
     exit(error)
   end
+
+  defp encode(data), do: "#{Jason.encode!(data)}\r\n"
 
 end

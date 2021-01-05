@@ -14,13 +14,26 @@ defmodule UDBServerTest do
   end
 
   test "server is alive", %{socket: socket} do
-    assert send_and_recv(socket, "ping") == "pong"
+    cmd = encode(%{"command" => "ping"})
+    assert send_and_recv(socket, cmd) |> get_result() == "pong"
   end
 
   defp send_and_recv(socket, command) do
     :ok = :gen_tcp.send(socket, command)
-    {:ok, data} = :gen_tcp.recv(socket, 0, 1000)
-    data
+    case :gen_tcp.recv(socket, 0, 10000) do
+      {:ok, data} ->
+        data
+      {:error, e} ->
+        "{\"result\": \"#{inspect e}\"}"
+    end
+  end
+
+  defp get_result(data) do
+    Jason.decode!(data) |> Map.fetch!("result")
+  end
+
+  defp encode(data) do
+    "#{Jason.encode!(data)}\r\n"
   end
 
 end
